@@ -6,19 +6,20 @@
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <Bounce2.h>
-
+//Add user_config.h in src folder with: #define SETTING_<var> "value";
+#include "user_config.h"
 // Blynk config
-char auth[] = "x";
+char auth[] = SETTINGS_AUTH;
 //WiFi config
-char ssid[] = "x";
-char pass[] = "x";
+char ssid[] = SETTINGS_AUTH;
+char pass[] = SETTINGS_PASS;
 //Server config
-char server[] = "x";
-int port = 8442;
+char server[] = SETTINGS_SERVER;
+int port = SETTINGS_PORT;
 //Mail config
-char usermail[] = "x";
+char usermail[] = SETTINGS_USER_MAIL;
 //PostESP config
-const byte interruptPin = 5;
+const byte interruptPin = SETTINGS_INTERRUPTPIN;
 
 void emailOnButtonPress()
 {
@@ -29,7 +30,12 @@ void emailOnButtonPress()
   if (isButtonPressed)
   {
     Serial.println("Button is pressed.Try to send email.");
-    Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
+    //This for loop serves to avoid the sending of emails during the test phase
+    for (int i = 0; i < 5; i++){
+      int value = millis() / 1000;
+      Serial.println(value);
+    }
+    //Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
     Serial.println("Mail sent.");
   }
 }
@@ -56,7 +62,7 @@ void setup()
   debouncer.attach(interruptPin);
   debouncer.interval(100); // interval in ms
 
-  // Use attachInterrupt if the sensor havo no bouncing problem
+  // Use attachInterrupt if the sensor have no bouncing problem
   //attachInterrupt(digitalPinToInterrupt(interruptPin), emailOnButtonPress, FALLING);
 }
 
