@@ -30,11 +30,9 @@ void emailOnButtonPress()
   if (isButtonPressed)
   {
     Serial.println("Button is pressed.Try to send email.");
-    //This for loop serves to avoid the sending of emails during the test phase
-    for (int i = 0; i < 5; i++){
-      int value = millis() / 1000;
-      Serial.println(value);
-    }
+    //This serves to avoid the sending of emails during the test phase
+    int value = millis() / 1000;
+    Serial.println(value);
     //Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
     Serial.println("Mail sent.");
   }
