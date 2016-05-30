@@ -220,18 +220,19 @@ String urlDecode(String input) {
 }
 
 void setupMode(){
-  Serial.println("setupMode");
   setupModeStatus = true;
+  // Initialize DNSServer object
   DNSServer DNS_SERVER;
-  const char* AP_SSID = "PostESP_Setup";
-  const IPAddress AP_IP(192, 168, 1, 1);
+
+  // Disconnect Wifi
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
+
+  // Scan networks
   int n = WiFi.scanNetworks();
   delay(100);
-
-  Serial.println("");
+  // Serial.println("");
   for (int i = 0; i < n; ++i) {
     SSID_LIST += "<option value=\"";
     SSID_LIST += WiFi.SSID(i);
@@ -240,12 +241,17 @@ void setupMode(){
     SSID_LIST += "</option>";
   }
   delay(100);
+
+  // Start AP
+  const char* AP_SSID = "PostESP_Setup";
+  const IPAddress AP_IP(192, 168, 1, 1);
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
   WiFi.softAP(AP_SSID);
   DNS_SERVER.start(53, "*", AP_IP);
   Serial.print("Starting Access Point at ");
   Serial.println(WiFi.softAPIP());
+
   // Settings Page
   WEB_SERVER.on("/settings", []() {
     String s = "<h2>Parametri Wifi</h2><p>Inserisci il nome della rete e la password.</p>";
