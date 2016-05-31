@@ -13,6 +13,7 @@
 #include <DNSServer.h>
 // Add user_config.h in src folder with: #define SETTING_<var> "value";
 #include "user_config.h"
+
 // Blynk config
 char auth[] = SETTINGS_AUTH;
 // WiFi config
@@ -53,39 +54,51 @@ boolean loadSavedConfig() {
     String(ssid);
     String(pass);
     String(server);
+    String(port);
     String(auth);
     String(usermail);
+    // SSID
     for (int i = 0; i < 32; ++i) {
       ssid += char(EEPROM.read(i));
     }
     Serial.print("SSID: ");
     Serial.println(ssid);
-
+    // Password
     for (int i = 32; i < 96; ++i) {
       pass += char(EEPROM.read(i));
     }
     Serial.print("Password: ");
     Serial.println(pass);
-
+    // Server
     for (int i = 96; i < 128; ++i) {
       server += char(EEPROM.read(i));
     }
     Serial.print("Server: ");
     Serial.println(server);
-
+    // Port
     for (int i = 128; i < 134; ++i) {
       port += char(EEPROM.read(i));
     }
     Serial.print("Port: ");
     Serial.println(port);
-
-    for (int i = 134; i < 168; ++i) {
+    // Token
+    for (int i = 134; i < 166; ++i) {
+      auth += char(EEPROM.read(i));
+    }
+    Serial.print("Token: ");
+    Serial.println(auth);
+    // User MAil
+    for (int i = 166; i < 230; ++i) {
       usermail += char(EEPROM.read(i));
     }
     Serial.print("Mail: ");
     Serial.println(usermail);
 
-    WiFi.begin(ssid.c_str(), pass.c_str());
+    Blynk.begin(auth.c_str(), ssid.c_str(), pass.c_str(), server.c_str(), port.toInt());
+    while (Blynk.connect() == false) {
+      Serial.println("Blynk server disconnected");
+    }
+    //WiFi.begin(ssid.c_str(), pass.c_str());
     return true;
   }
   else {
@@ -169,7 +182,7 @@ String makePage(String title, String contents) {
   // Basic CSS Styles
   s += "body{font-family:sans-serif;font-size:16px;font-size:1rem;line-height:22px;line-height:1.375rem;color:#585858;font-weight:400;background:#fff}p{margin:0 0 1em 0}a{color:#cd5c5c;background:transparent;text-decoration:underline}a:active,a:hover{outline:0;text-decoration:none}strong{font-weight:700}em{font-style:italic}h1{font-size:32px;font-size:2rem;line-height:38px;line-height:2.375rem;margin-top:0.7em;margin-bottom:0.5em;color:#343434;font-weight:400}fieldset,legend{border:0;margin:0;padding:0}legend{font-size:18px;font-size:1.125rem;line-height:24px;line-height:1.5rem;font-weight:700}label,button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}input{line-height:normal}.input{width:100%}input[type='text'],input[type='email'],input[type='tel'],input[type='date']{height:36px;padding:0 0.4em}input[type='checkbox'],input[type='radio']{box-sizing:border-box;padding:0}";
   // Custom CSS
-  s += "header{width:100%;background-color: #ffffff;top: 0;min-height:60px;margin-bottom:21px;font-size:15px;color: #fff}.content-body{padding:0 1em 0 1em}header p{font-size: 1.25rem;float: left;position: relative;z-index: 1000;line-height: normal; margin: 15px 0 0 10px}";
+  s += "header{width:100%;background-color: #000000;top: 0;min-height:60px;margin-bottom:21px;font-size:15px;color: #fff}.content-body{padding:0 1em 0 1em}header p{font-size: 1.25rem;float: left;position: relative;z-index: 1000;line-height: normal; margin: 15px 0 0 10px}";
   s += "</style>";
   s += "<title>";
   s += title;
@@ -258,18 +271,19 @@ void setupMode(){
     s += "<form method=\"get\" action=\"setap\"><label>SSID: </label><select name=\"ssid\">";
     s += SSID_LIST;
     s += "</select><br><br><label>Password: </label><input name=\"pass\" length=64 type=\"password\">";
+    s += "<br><br>";
     s += "<h2>Parametri server</h2>";
-    s += "<br><label>Server: </label><input name=\"server\" lenght=32><br>";
-    s += "<br><label>Port: </label><input name=\"port\" lenght=6><br>";
-    s += "<br><label>Token: </label><input name=\"auth\" length=32><br>";
-    s += "<br><label>User mail: </label><input name=\"usermail\" length=64><br>";
+    s += "<br><label>Server:    </label><input name=\"server\"    lenght=32><br>";
+    s += "<br><label>Port:      </label><input name=\"port\"      lenght=6><br>";
+    s += "<br><label>Token:     </label><input name=\"auth\"      length=32><br>";
+    s += "<br><label>User mail: </label><input name=\"usermail\"  length=64><br>";
     s += "<br><input type=\"submit\"></form>";
     WEB_SERVER.send(200, "text/html", makePage("Parametri", s));
   });
 
   // setap Form Post
   WEB_SERVER.on("/setap", []() {
-    for (int i = 0; i < 228; ++i) {
+    for (int i = 0; i < 230; ++i) {
       EEPROM.write(i, 0);
     }
     String ssid = urlDecode(WEB_SERVER.arg("ssid"));
@@ -307,13 +321,13 @@ void setupMode(){
     }
 
     Serial.println("Writing Server to EEPROM...");
-    for (int i = 0; i < auth.length(); ++i) {
-      EEPROM.write(96 + i, auth[i]);
+    for (int i = 0; i < server.length(); ++i) {
+      EEPROM.write(96 + i, server[i]);
     }
 
     Serial.println("Writing Port to EEPROM...");
-    for (int i = 0; i < auth.length(); ++i) {
-      EEPROM.write(128 + i, auth[i]);
+    for (int i = 0; i < port.length(); ++i) {
+      EEPROM.write(128 + i, port[i]);
     }
 
     Serial.println("Writing Token to EEPROM...");
@@ -322,10 +336,9 @@ void setupMode(){
     }
 
     Serial.println("Writing Mail to EEPROM...");
-    for (int i = 0; i < auth.length(); ++i) {
-      EEPROM.write(166 + i, auth[i]);
+    for (int i = 0; i < usermail.length(); ++i) {
+      EEPROM.write(166 + i, usermail[i]);
     }
-
 
     EEPROM.commit();
     Serial.println("Write EEPROM done!");
@@ -412,13 +425,19 @@ void setup()
        return;
    }
    flashLED(10, 100);
-   if (!setupModeStatus){
+   /*if (!setupModeStatus){
      // Collegamento al server
+     char(server);
+     Serial.println(server);
+     Serial.println(port);
+     Serial.println(auth);
+     Serial.println(ssid);
+     Serial.println(pass);
      Blynk.begin(auth, ssid, pass, server, port);
 
      while (Blynk.connect() == false) {
        Serial.println("Blynk server disconnected");
-     }
+     }*/
 
      //Code for testing connectivity and email settings
      //Serial.println("Blynk.connect is true.Try to send.");
@@ -432,7 +451,7 @@ void setup()
 
      // Use attachInterrupt if the sensor have no bouncing problem
      //attachInterrupt(digitalPinToInterrupt(interruptPin), emailOnButtonPress, FALLING);
-   }
+
 }
 
 // Keep this flag not to re-sync on every reconnection
