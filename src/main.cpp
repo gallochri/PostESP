@@ -13,7 +13,6 @@
 #include <DNSServer.h>
 // Add user_config.h in src folder with: #define SETTING_<var> "value";
 #include "user_config.h"
-
 // Blynk config
 char auth[] = SETTINGS_AUTH;
 // WiFi config
@@ -49,7 +48,7 @@ void setBoard() {
 }
 
 boolean loadSavedConfig() {
-  Serial.println("Lettura configurazione....");
+  Serial.println("Reading config....");
   if (EEPROM.read(0) != 0) {
     String(ssid);
     String(pass);
@@ -98,17 +97,15 @@ boolean loadSavedConfig() {
     while (Blynk.connect() == false) {
       Serial.println("Blynk server disconnected");
     }
-    //WiFi.begin(ssid.c_str(), pass.c_str());
     return true;
   }
   else {
-    Serial.println("Configurazione non trovata.");
+    Serial.println("Config not found.");
     return false;
   }
 }
 
 void initLEDS() {
-  // Note: for nodeMCU leds are reversed (use HIGH)
     pinMode(SETTINGS_BLUE_PIN, OUTPUT);
     digitalWrite(SETTINGS_BLUE_PIN, OFF);
     pinMode(SETTINGS_RED_PIN, OUTPUT);
@@ -125,7 +122,6 @@ void flashLED(int times, int delayms) {
         }
         delay(delayms);
     }
-    // Quando esco il pin deve essere acceso
     digitalWrite(SETTINGS_BLUE_PIN, ON);
 }
 
@@ -150,11 +146,9 @@ void stopSetupLEDS() {
 
 boolean checkWiFiConnection() {
   int count = 0;
-  Serial.print("Connessione");
   while ( count < 30 ) {
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println();
-      Serial.println("Connesso!");
+      Serial.println("Connected!");
       return (true);
     }
     delay(500);
@@ -172,7 +166,6 @@ void powerOff() {
 }
 
 // HTML Page maker
-// ---------------
 String makePage(String title, String contents) {
   String s = "<!DOCTYPE html><html><head>";
   s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
@@ -196,7 +189,6 @@ String makePage(String title, String contents) {
 }
 
 // Decode URL
-// ----------
 String urlDecode(String input) {
   String s = input;
   s.replace("%20", " ");
@@ -236,12 +228,10 @@ void setupMode(){
   setupModeStatus = true;
   // Initialize DNSServer object
   DNSServer DNS_SERVER;
-
   // Disconnect Wifi
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
-
   // Scan networks
   int n = WiFi.scanNetworks();
   delay(100);
@@ -254,7 +244,6 @@ void setupMode(){
     SSID_LIST += "</option>";
   }
   delay(100);
-
   // Start AP
   const char* AP_SSID = "PostESP_Setup";
   const IPAddress AP_IP(192, 168, 1, 1);
@@ -264,21 +253,20 @@ void setupMode(){
   DNS_SERVER.start(53, "*", AP_IP);
   Serial.print("Starting Access Point at ");
   Serial.println(WiFi.softAPIP());
-
   // Settings Page
   WEB_SERVER.on("/settings", []() {
-    String s = "<h2>Parametri Wifi</h2><p>Inserisci il nome della rete e la password.</p>";
+    String s = "<h2>Wifi Settings</h2><p>Insert SSD and password.</p>";
     s += "<form method=\"get\" action=\"setap\"><label>SSID: </label><select name=\"ssid\">";
     s += SSID_LIST;
     s += "</select><br><br><label>Password: </label><input name=\"pass\" length=64 type=\"password\">";
     s += "<br><br>";
-    s += "<h2>Parametri server</h2>";
+    s += "<h2>Blynk server settings</h2>";
     s += "<br><label>Server:    </label><input name=\"server\"    lenght=32><br>";
     s += "<br><label>Port:      </label><input name=\"port\"      lenght=6><br>";
     s += "<br><label>Token:     </label><input name=\"auth\"      length=32><br>";
     s += "<br><label>User mail: </label><input name=\"usermail\"  length=64><br>";
     s += "<br><input type=\"submit\"></form>";
-    WEB_SERVER.send(200, "text/html", makePage("Parametri", s));
+    WEB_SERVER.send(200, "text/html", makePage("Settings", s));
   });
 
   // setap Form Post
@@ -299,7 +287,7 @@ void setupMode(){
     Serial.println(server);
 
     String port = urlDecode(WEB_SERVER.arg("port"));
-    Serial.print("Porta: ");
+    Serial.print("Port: ");
     Serial.println(port);
 
     String auth = urlDecode(WEB_SERVER.arg("auth"));
@@ -342,19 +330,17 @@ void setupMode(){
 
     EEPROM.commit();
     Serial.println("Write EEPROM done!");
-    String s = "<h1>Configurazione completa..</h1><p>PostESP connessione a  \"";
+    String s = "<h1>Completed!</h1><p>PostESP connecting to   \"";
     s += ssid;
-    s += "\" dopo il riavvio.";
-    WEB_SERVER.send(200, "text/html", makePage("Parametri Wi-Fi", s));
+    s += "\" after reboot.";
+    WEB_SERVER.send(200, "text/html", makePage("Settings", s));
     //ESP.restart();
-
     stopSetupLEDS();
     powerOff();
-
   });
   // Show the configuration page if no path is specified
   WEB_SERVER.onNotFound([]() {
-    String s = "<h1>WiFi Configuration Mode</h1><p><a href=\"/settings\">Wi-Fi Settings</a></p>";
+    String s = "<h1>WiFi Configuration Mode</h1><p><a href=\"/settings\">Settings</a></p>";
     WEB_SERVER.send(200, "text/html", makePage("Access Point mode", s));
   });
 WEB_SERVER.begin();
@@ -370,9 +356,9 @@ void emailOnButtonPress()
   {
     Serial.println("Button is pressed.Try to send email.");
     //This serves to avoid the sending of emails during the test phase
-    int value = millis() / 1000;
-    Serial.println(value);
-    //Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
+    //int value = millis() / 1000;
+    //Serial.println(value);
+    Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
     Serial.println("Mail sent.");
   }
 }
@@ -411,7 +397,7 @@ void setup()
    }
    // If configuration loading failed, enter to setup mode
    if (!loadSavedConfig()) {
-       Serial.print("WARNING: Non trovo una configurazione salvata");
+       Serial.print("WARNING: Settings not found.");
        stopSetupLEDS();
        spinticker.attach(SPININTERVAL, setupFlashLED);
        setupMode();
@@ -419,7 +405,7 @@ void setup()
    }
    // If WIFI check failing, enter to setup mode
    if (!checkWiFiConnection()) {
-       Serial.print("ERROR: Non riesco a collegarmi alla wifi");
+       Serial.print("ERROR: Can't connect to wifi.");
        stopSetupLEDS();
        powerOff();
        return;
