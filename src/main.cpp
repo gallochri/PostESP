@@ -55,7 +55,7 @@ boolean loadSavedConfig() {
     String(server);
     String(port);
     String(auth);
-    String(usermail);
+    //String(usermail);
     // SSID
     for (int i = 0; i < 32; ++i) {
       ssid += char(EEPROM.read(i));
@@ -87,12 +87,13 @@ boolean loadSavedConfig() {
     Serial.print("Token: ");
     Serial.println(auth);
     // User MAil
+    /*
     for (int i = 166; i < 230; ++i) {
       usermail += char(EEPROM.read(i));
     }
     Serial.print("Mail: ");
     Serial.println(usermail);
-
+*/
     Blynk.begin(auth.c_str(), ssid.c_str(), pass.c_str(), server.c_str(), port.toInt());
     while (Blynk.connect() == false) {
       Serial.println("Blynk server disconnected");
@@ -340,13 +341,13 @@ void setupMode(){
   });
   // Show the configuration page if no path is specified
   WEB_SERVER.onNotFound([]() {
-    String s = "<h1>WiFi Configuration Mode</h1><p><a href=\"/settings\">Settings</a></p>";
+    String s = "<h1>Configuration Mode</h1><p><a href=\"/settings\">Settings</a></p>";
     WEB_SERVER.send(200, "text/html", makePage("Access Point mode", s));
   });
 WEB_SERVER.begin();
 }
 
-void emailOnButtonPress()
+void emailOnButtonPress(String email)
 {
   // Let's send an e-mail when you press the button connected
   // to digital pin 5 (D1 on nodeMCU) on your ESP8266
@@ -354,11 +355,12 @@ void emailOnButtonPress()
   int isButtonPressed = !digitalRead(interruptPin);
   if (isButtonPressed)
   {
-    Serial.println("Button is pressed.Try to send email.");
+    Serial.println("Button is pressed.");
+    Serial.println("Try to send email to " + email);
     //This serves to avoid the sending of emails during the test phase
     //int value = millis() / 1000;
     //Serial.println(value);
-    Blynk.email( usermail, "Subject: You have Mail!", "There's a letter in your postbox!");
+    Blynk.email( email.c_str(), "Subject: You have Mail!", "There's a letter in your postbox!");
     Serial.println("Mail sent.");
   }
 }
@@ -439,7 +441,6 @@ void setup()
      //attachInterrupt(digitalPinToInterrupt(interruptPin), emailOnButtonPress, FALLING);
 
 }
-
 // Keep this flag not to re-sync on every reconnection
 bool isFirstConnect = true;
 // This function will run every time Blynk connection is established
@@ -457,13 +458,20 @@ void loop()
 {
   if (setupModeStatus){
       WEB_SERVER.handleClient();
+  } else {
+    Blynk.run();
   }
-
-  Blynk.run();
   // Update the Bounce instance :
   debouncer.update();
   int status = debouncer.read();
   if (debouncer.fell()){
-    emailOnButtonPress();
+    // User MAil
+    String(usermail);
+    for (int i = 166; i < 230; ++i) {
+      usermail += char(EEPROM.read(i));
+    }
+    Serial.print("Mail: ");
+    Serial.println(usermail);
+    emailOnButtonPress(usermail);
   }
 }
